@@ -84,3 +84,20 @@ completion = client.chat.completions.create(
                 top_p=0.9
             )
 print(completion.choices[0].message.content)
+
+#8 == combine prompt types, also stream it
+completion = client.chat.completions.create(
+                model=my_model,
+                messages= [
+                    {'role': 'system', 'content': 'You are a travel blogger'},
+                    {'role': 'user', 'content':"wWrite a 500-word blog post about \
+                      your recent trip to India. Make sure to give a step-by-step itinerary of your trip."}
+                ],
+                # temperature=0.2,
+                top_p=0.9,
+                stream=True
+            )
+
+for chunk in completion:
+    if chunk.choices[0].delta.content is not None:
+        print(chunk.choices[0].delta.content, end="")
