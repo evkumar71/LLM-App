@@ -21,7 +21,6 @@ completion = client.chat.completions.create(
                     }
                 ]
             )
-
 print(completion.choices[0].message.content)
 
 #2 == direct prompting
@@ -54,7 +53,6 @@ completion = client.chat.completions.create(
             )
 print(completion.choices[0].message.content)
 
-
 #5 == Role-playing prompt
 completion = client.chat.completions.create(
                 model=my_model,
@@ -64,7 +62,6 @@ completion = client.chat.completions.create(
                 ]
             )
 print(completion.choices[0].message.content)
-ƒ
 
 #6 == open-ended prompt
 completion = client.chat.completions.create(
@@ -73,5 +70,17 @@ completion = client.chat.completions.create(
                     {'role': 'system', 'content': 'You are a philospher'},
                     {'role': 'user', 'content':"what is the meaning of life"}
                 ]
+            )
+print(completion.choices[0].message.content)
+
+#7 == temperature and top-p scaling
+completion = client.chat.completions.create(
+                model=my_model,
+                messages= [
+                    {'role': 'system', 'content': 'You are a creative writer'},
+                    {'role': 'user', 'content':"what a creative tagline for a coffee shop"}
+                ],
+                # temperature=0.2,
+                top_p=0.9
             )
 print(completion.choices[0].message.content)
