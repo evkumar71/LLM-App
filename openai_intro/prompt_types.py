@@ -7,7 +7,7 @@ my_model = 'gpt-4o-mini'
 load_dotenv()
 client = OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
 
-# ==few-shot learning or prompting
+#1 ==few-shot learning or prompting
 completion = client.chat.completions.create(
                 model=my_model,
                 messages=[
@@ -19,11 +19,12 @@ completion = client.chat.completions.create(
                                     '.
                                     Now translate: 'Thank you'."""
                     }
-                    ]
-                )
+                ]
+            )
 
-# print(completion.choices[0].message.content)
-# == direct prompting
+print(completion.choices[0].message.content)
+
+#2 == direct prompting
 completion = client.chat.completions.create(
                 model=my_model,
                 messages= [
@@ -32,7 +33,7 @@ completion = client.chat.completions.create(
                 ]
             )
 
-# == chain-of-thought prompt
+#3 == chain-of-thought prompt
 completion = client.chat.completions.create(
                 model=my_model,
                 messages= [
@@ -43,12 +44,34 @@ completion = client.chat.completions.create(
             )
 print(completion.choices[0].message.content)
 
-# == Instructional prompting
+#4 == Instructional prompting
 completion = client.chat.completions.create(
                 model=my_model,
                 messages= [
                     {'role': 'system', 'content': 'You are knowledgable personal trainer'},
                     {'role': 'user', 'content':"Write a 25-line eassay describing the benefits of exercise"}
+                ]
+            )
+print(completion.choices[0].message.content)
+
+
+#5 == Role-playing prompt
+completion = client.chat.completions.create(
+                model=my_model,
+                messages= [
+                    {'role': 'system', 'content': 'You are character in a fictional story'},
+                    {'role': 'user', 'content':"Describe the setting"}
+                ]
+            )
+print(completion.choices[0].message.content)
+ƒ
+
+#6 == open-ended prompt
+completion = client.chat.completions.create(
+                model=my_model,
+                messages= [
+                    {'role': 'system', 'content': 'You are a philospher'},
+                    {'role': 'user', 'content':"what is the meaning of life"}
                 ]
             )
 print(completion.choices[0].message.content)
