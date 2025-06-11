@@ -19,7 +19,7 @@ for doc in documents:
     collection.upsert(ids=doc['id'], documents=doc['text'])
     
 # query to search in db
-query_text = "Hello World !"
+query_text = "Age of the earth"
 
 # query the db and get results
 results = collection.query(
@@ -27,4 +27,19 @@ results = collection.query(
     n_results=3
 )
 
+# format and print results
+line_1 = '-' * 10
+line_2 = '-' * 20
+
+print(f'{line_1} Results {line_1}')
 print(results)
+
+print(f'{line_1} Query {line_1}')
+print(query_text)
+
+print(f'{line_1} Detailed {line_1}')
+for idx, doc in enumerate(results['documents'][0]):
+    doc_id = results['ids'][0][idx]
+    dist = results['distances'][0][idx]
+    
+    print(f'Similar doc: <{doc}> -> (ID: {doc_id}, Distnace: {dist})')
