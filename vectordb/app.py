@@ -1,11 +1,14 @@
 import chromadb
+from chromadb.utils import embedding_functions
+
+default_ef = embedding_functions.DefaultEmbeddingFunction()
 
 # vector db client
 chroma_client = chromadb.Client()
 
 collection_name = "test_collection"
 
-collection = chroma_client.get_or_create_collection(collection_name)
+collection = chroma_client.get_or_create_collection(collection_name, embedding_function=default_ef)
 
 # Define text documents to be added to vector-db
 documents = [
