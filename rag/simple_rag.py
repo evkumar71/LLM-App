@@ -1,12 +1,12 @@
 import os
-import csv
-import pandas
+import pandas as pd
 from openai import OpenAI
 import chromadb
 from chromadb.utils import embedding_functions
+from create_csv import generate_csv
 
 # get openai api-key
-api_key = os.getenv("OPENAI_API_KEY")
+openai_key = os.getenv("OPENAI_API_KEY")
 
 
 class EmbeddingModel:
@@ -14,9 +14,9 @@ class EmbeddingModel:
         self.model_type = model_type
 
         if model_type == "openai":
-            self.client = OpenAI(api_key=api_key)
+            self.client = OpenAI(api_key=openai_key)
             self.embedding_fn = embedding_functions.OpenAIEmbeddingFunction(
-                api_key=api_key, model_name="text-embedding-3-small"
+                api_key=openai_key, model_name="text-embedding-3-small"
             )
 
         elif model_type == "chroma":
@@ -28,7 +28,7 @@ class EmbeddingModel:
             self.embedding_fn = embedding_functions.OpenAIEmbeddingFunction(
                 api_key="ollama",
                 api_base="http://localhost:11434/v1",
-                model_name="nomic-embed-text",
+                model_name="nomic-embed-text"
             )
 
 
@@ -37,12 +37,11 @@ class LLMModel:
         self.model_type = model_type
 
         if model_type == "openai":
-            self.client = OpenAI(api_key=api_key)
+            self.client = OpenAI(api_key=openai_key)
             self.model_name = "gpt-4o-mini"
         else:
-            api_key = ("ollama",)
             self.client = OpenAI(base_url="http://localhost:11434/v1", api_key="ollama")
-            model_name = "ollama3.2"
+            self.model_name = "ollama3.2"
 
     def generate_completions(self, messages):
         try:
@@ -80,3 +79,130 @@ def select_models():
         print("Please enter 1, 2, or 3")
 
     return llm_type, embedding_type
+
+
+def load_csv():
+    df = pd.read_csv("./space_facts.csv")
+    documents = df["fact"].tolist()
+
+    print("Loaded docs..")
+ 
+    return documents
+
+
+def setup_chromadb(documents, embedding_model):
+    print("VIJAYA")
+    print(documents)
+    client = chromadb.Client()
+
+    try:
+        client.delete_collection("space_facts")
+    except:
+        pass
+
+    collection = client.create_collection(
+        name="space_facts", embedding_function=embedding_model.embedding_fn
+    )
+
+    collection.add(ids=[str(i) for i in range(len(documents))], documents=documents)
+
+    print("Documents added to chromadb collection successfully")
+    return collection
+
+
+def find_related_chunks(query, collection, top_k=2):
+    results = collection.query(query_texts=[query], n_results=top_k)
+
+    print("\nRelated chunks found:")
+    for doc in results["documents"][0]:
+        print(f"- {doc}")
+
+    return list(
+        zip(
+            results["documents"][0],
+            (
+                results["metadatas"][0]
+                if results["metadatas"][0]
+                else [{}] * len(results["documents"][0])
+            ),
+        )
+    )
+
+
+def augment_prompt(query, related_chunks):
+    context = "\n".join([chunk[0] for chunk in related_chunks])
+    augmented_prompt = f"Context:\n{context}\n\nQuestion: {query}\nAnswer:"
+
+    print("\nAugmented prompt: ⤵️")
+    print(augmented_prompt)
+
+    return augmented_prompt
+
+
+def rag_pipeline(query, collection, llm_model, top_k=2):
+    print(f"\nProcessing query: {query}")
+
+    related_chunks = find_related_chunks(query, collection, top_k)
+    augmented_prompt = augment_prompt(query, related_chunks)
+
+    response = llm_model.generate_completions(
+        [
+            {
+                "role": "system",
+                "content": "You are a helpful assistant who can answer"
+                "questions about space but only answers questions that are"
+                "directly related to the sources/documents given.",
+            },
+            {"role": "user", "content": augmented_prompt},
+        ]
+    )
+
+    print("\nGenerated response:")
+    print(response)
+
+    references = [chunk[0] for chunk in related_chunks]
+    return response, references
+
+def main():
+    print("Starting the RAG pipeline demo...")
+
+    # Select models
+    llm_type, embedding_type = select_models()
+
+    # Initialize models
+    llm_model = LLMModel(llm_type)
+    embedding_model = EmbeddingModel(embedding_type)
+
+    print(f"\nUsing LLM: {llm_type.upper()}")
+    print(f"Using Embeddings: {embedding_type.upper()}")
+
+    # Generate and load data
+    generate_csv()
+    documents = load_csv()
+    print(documents)
+
+    # Setup ChromaDB
+    collection = setup_chromadb(documents, embedding_model)
+
+    # Run queries
+    queries = [
+        "What is the Hubble Space Telescope?",
+        "Tell me about Mars exploration.",
+    ]
+
+    for query in queries:
+        print("\n" + "=" * 50)
+        print(f"Processing query: {query}")
+        response, references = rag_pipeline(query, collection, llm_model)
+
+        print("\nFinal Results:")
+        print("-" * 30)
+        print("Response:", response)
+        print("\nReferences used:")
+        for ref in references:
+            print(f"- {ref}")
+        print("=" * 50)
+
+
+if __name__ == "__main__":
+    main()
