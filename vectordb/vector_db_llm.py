@@ -25,6 +25,7 @@ collection = chroma_client.get_or_create_collection(
 
 # fn to load docs in a list
 def load_documents(dir_path):
+    print("Loading docs from disk")
     documents = []
     for fn in os.listdir(dir_path):
         if fn.endswith(".txt"):
@@ -49,35 +50,35 @@ def split_text(text, chunk_size=1000, chunk_overlap=20):
     return chunks
 
 
-# load docs now
-doc_location = "../data/news_articles"
-documents = load_documents(doc_location)
-print(f"Len of loaded docs: {len(documents)}")
+# fn to chunk all docs
+def chunk_docs(documents):
+    print("splitting docs to chunks")
+    chunked_docs = []
+    for doc in documents:
+        chunks = split_text(doc["text"])
+        for i, chunk in enumerate(chunks):
+            chunked_docs.append({"id": f"{doc['id']}_chunk{i+1}", "text": chunk})
 
-# # chunk the docs
-print("Splitting docs..")
-chunked_docs = []
-for doc in documents:
-    chunks = split_text(doc["text"])
-    for i, chunk in enumerate(chunks):
-        chunked_docs.append({"id": f"{doc['id']}_chunk{i+1}", "text": chunk})
+    return chunked_docs
 
 
 # fn to generate openai embeddings
 def get_openai_embedding(text):
-    client = OpenAI()
-    response = client.embeddings.create(input=text, model="text-embedding-3-small")
+    response = openai_client.embeddings.create(
+        input=text, model="text-embedding-3-small"
+    )
     emb = response.data[0].embedding
     return emb
 
 
-# load docs, embds into db
-print("Gen and write embeddings to db..")
-for doc in chunked_docs:
-    doc["embedding"] = get_openai_embedding(doc["text"])
-    collection.upsert(
-        ids=[doc["id"]], embeddings=[doc["embedding"]], documents=[doc["text"]]
-    )
+# fn to write embeddings and doc to chromadb
+def load_embedding_to_db(chunked_docs):
+    print("gen embedding and write to db")
+    for doc in chunked_docs:
+        doc["embedding"] = get_openai_embedding(doc["text"])
+        collection.upsert(
+            ids=[doc["id"]], embeddings=[doc["embedding"]], documents=[doc["text"]]
+        )
 
 
 # query embeddings in db
@@ -118,6 +119,15 @@ def generate_llm_response(question, relevant_chunks):
     )
     return response.choices[0].message
 
+
+# main start
+doc_location = "../data/news_articles"
+documents = load_documents(doc_location)
+print(f"Len of loaded docs: {len(documents)}")
+
+chunked_docs = chunk_docs(documents)
+
+load_embedding_to_db(chunked_docs)
 
 # main section, complete workflow
 user_question = "Tell me about AI replacing TV writers strike"
