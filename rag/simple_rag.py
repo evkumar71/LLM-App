@@ -41,7 +41,7 @@ class LLMModel:
             self.model_name = "gpt-4o-mini"
         else:
             self.client = OpenAI(base_url="http://localhost:11434/v1", api_key="ollama")
-            self.model_name = "ollama3.2"
+            self.model_name = "llama3.2"
 
     def generate_completions(self, messages):
         try:
@@ -91,8 +91,6 @@ def load_csv():
 
 
 def setup_chromadb(documents, embedding_model):
-    print("VIJAYA")
-    print(documents)
     client = chromadb.Client()
 
     try:
