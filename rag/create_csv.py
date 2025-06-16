@@ -44,3 +44,5 @@ def generate_csv():
         writer.writerows(facts)
 
     print("CSV file 'space_facts.csv' created successfully!")
+    
+    return facts

@@ -159,7 +159,7 @@ def rag_pipeline(query, collection, llm_model, top_k=2):
     print(response)
 
     references = [chunk[0] for chunk in related_chunks]
-    return response, references
+    return response, references, augment_prompt
 
 def main():
     print("Starting the RAG pipeline demo...")
@@ -191,7 +191,7 @@ def main():
     for query in queries:
         print("\n" + "=" * 50)
         print(f"Processing query: {query}")
-        response, references = rag_pipeline(query, collection, llm_model)
+        response, references, augment_prompt = rag_pipeline(query, collection, llm_model)
 
         print("\nFinal Results:")
         print("-" * 30)
