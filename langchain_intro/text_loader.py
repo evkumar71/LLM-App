@@ -33,7 +33,7 @@ print(f"Number of split documents: {len(split_docs)}")
 # Clean the text in each document
 texts = [clean_text(doc.page_content) for doc in split_docs]
 
-# # Load the OpenAI embeddings to vectorize the text
+# Load the OpenAI embeddings to vectorize the text
 embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
 
 # get a vectorstore from embeddings and texts
@@ -43,5 +43,20 @@ retriever = FAISS.from_texts(texts, embeddings).as_retriever(search_kwargs={"k":
 query = "what did Martin Luther King Jr. dream about?"
 docs = retriever.invoke(query)
 
-pprint.pprint(docs)
-print(type(docs[0]))
+# These are the relevant documents retrieved
+print(f"Relevant docs: {docs}")
+
+from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
+from langchain_openai import ChatOpenAI
+
+prompt = ChatPromptTemplate.from_template(
+    "you use the following docs {docs}, and answer the following question {query}"
+)
+
+model = ChatOpenAI(model="gpt-4o-mini")
+
+chain = prompt | model | StrOutputParser()
+
+response = chain.invoke({"docs": docs, "query": query})
+print(response)
