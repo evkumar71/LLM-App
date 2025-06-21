@@ -65,17 +65,31 @@ known_actions = {"calculate": calculate, "planet_mass": planet_mass}
 
 prompt = read_prompt(file_path="./prompt.txt").strip()
 
+
 agent = Agent(system=prompt)
-response = agent("What is the mass of Eart?")
+
+
+response = agent("What is the combined mass of Saturn and Jupiter and Mars?")
 print(response)
 
-response = planet_mass("Earth")
+next_prompt = "Observation: {}".format(planet_mass("Saturn"))
+
+response = agent(next_prompt)
 print(response)
 
-next_response = f"Observation: {response}"
-print(next_response)
+next_prompt = "Observation: {}".format(planet_mass("Jupiter"))
 
-response = agent(next_response)
+response = agent(next_prompt)
 print(response)
 
-print(f"agent messages: {agent.messages}")
+next_prompt = "Observation: {}".format(planet_mass("Mars"))
+
+response = agent(next_prompt)
+print(response)
+
+next_prompt = "Observattion: {}".format(eval("568.34 + 1898.19"))
+
+response = agent(next_prompt)
+
+print(response)
+
