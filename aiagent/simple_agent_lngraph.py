@@ -46,7 +46,21 @@ graph_builder.set_finish_point("bot")
 # STEP#5 - compile the graph
 graph = graph_builder.compile()
 
-# Invoke the graph with a message
-res = graph.invoke({'messages': ["Hello, how are you?"]})
 
-print(res["messages"])
+# pip install ipython
+# from IPython.display import Image, display
+
+# try:
+#     display(Image(graph.get_graph().draw_mermaid_png()))
+# except Exception:
+#     # This requires some extra dependencies and is optional
+#     pass
+
+while True:
+    user_input = input("User: ")
+    if user_input.lower() in ["quit", "exit", "q"]:
+        print("Goodbye!")
+        break
+    for event in graph.stream({"messages": ("user", user_input)}):
+        for value in event.values():
+            print("Assistant:", value["messages"].content)
