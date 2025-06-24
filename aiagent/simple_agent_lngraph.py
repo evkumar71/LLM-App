@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
 from langgraph.graph.message import add_messages
 from langgraph.graph import StateGraph, START, END
+from show_graph import show_graph
 
 load_dotenv()
 
@@ -46,15 +47,7 @@ graph_builder.set_finish_point("bot")
 # STEP#5 - compile the graph
 graph = graph_builder.compile()
 
-
-# pip install ipython
-# from IPython.display import Image, display
-
-# try:
-#     display(Image(graph.get_graph().draw_mermaid_png()))
-# except Exception:
-#     # This requires some extra dependencies and is optional
-#     pass
+show_graph(graph)
 
 while True:
     user_input = input("User: ")
@@ -64,4 +57,3 @@ while True:
     for event in graph.stream({"messages": ("user", user_input)}):
         for value in event.values():
             print("Assistant:", value["messages"].content)
-
