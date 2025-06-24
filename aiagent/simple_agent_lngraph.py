@@ -57,4 +57,3 @@ while True:
     for event in graph.stream({"messages": ("user", user_input)}):
         for value in event.values():
             print("Assistant:", value["messages"].content)
-
