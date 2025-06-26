@@ -7,6 +7,7 @@ from langgraph.graph import StateGraph
 from langgraph.prebuilt import ToolNode, tools_condition
 from langchain_tavily import TavilySearch
 from show_graph import show_graph
+from langgraph.checkpoint.memory import MemorySaver
 
 load_dotenv()
 
@@ -69,16 +70,29 @@ graph_builder.set_entry_point("bot")
 # STEP#4 - add end point
 # graph_builder.set_finish_point("bot")
 
+memory = MemorySaver()
+
+# thread where the agent will dump its memory to
+config = {
+    "configurable": {"thread_id": 1}
+    }
+
 # STEP#5 - compile the graph
-graph = graph_builder.compile()
+graph = graph_builder.compile(checkpointer=memory)
 
 show_graph(graph)
 
-while True:
-    user_input = input("User: ")
-    if user_input.lower() in ["quit", "exit", "q"]:
-        print("Goodbye!")
-        break
-    for event in graph.stream({"messages": ("user", user_input)}):
-        for value in event.values():
-            print("Assistant:", value["messages"])
+# Load additional code from a file
+# Every message output by bot gets included in the context
+with open('include.py', 'r') as f:
+    code = f.read()
+exec(code)
+    
+# while True:
+#     user_input = input("User: ")
+#     if user_input.lower() in ["quit", "exit", "q"]:
+#         print("Goodbye!")
+#         break
+#     for event in graph.stream({"messages": ("user", user_input)}, config, stream_mode="values"):
+#         for value in event.values():
+#             print("Assistant:", value["messages"])
