@@ -106,6 +106,7 @@ def research_competitors_node(state: AgentState):
             ]
         )
         for q in queries.queries:
+
             # response = tavily.invoke(input=q)
             response = cached_tavily_search(q)
             for r in response["results"]:

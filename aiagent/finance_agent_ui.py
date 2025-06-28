@@ -30,12 +30,10 @@ model = ChatOpenAI(api_key=openai_key, model=model_name, temperature=0.0)
 
 cache = TTLCache(maxsize=100, ttl=300)  # Cache for 5 minutes
 
-
 @functools.lru_cache(maxsize=128)
 def cached_tavily_search(query: str):
     response = tavily.invoke(input=query)
     return response # ["results"]
-
 
 class AgentState(TypedDict):
     task: str
@@ -110,6 +108,7 @@ def research_competitors_node(state: AgentState):
         for q in queries.queries:
             # response = tavily.invoke(input=q)
             response = cached_tavily_search(q)
+
             for r in response["results"]:
                 content.append(r["content"])
     return {"content": content}
