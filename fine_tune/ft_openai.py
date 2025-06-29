@@ -162,9 +162,36 @@ def eval_model(input_model, user_question):
         ],
     )
 
-    print(
-        f" ==== >> {input_model} response: \n {response.choices[0].message.content}"
-    )
+    print(f" ==== >> {input_model} response: \n {response.choices[0].message.content}")
+
+
+context = [
+    {
+        "role": "system",
+        "content": """This is a customer support chatbot designed to help with common 
+                                           inquiries for TeaCrafters""",
+    }
+]
+
+
+def collect_messages(
+    role, message
+):  # keeps track of the message exchange between user and assistant
+    context.append({"role": role, "content": f"{message}"})
+
+
+def get_completion(fine_tuned_model):
+    try:
+        response = client.chat.completions.create(
+            model=fine_tuned_model, messages=context
+        )
+
+        print("\n Assistant: ", response.choices[0].message.content, "\n")
+        return response.choices[0].message.content
+    except openai.APIError as e:
+        print(e.http_status)
+        print(e.error)
+        return e.error
 
 
 # ----------- Start here -----------
@@ -219,21 +246,36 @@ job_id = "ftjob-7dFQrioNHET4Q7PKiC1P055A"
 # get_finetune_results()
 fine_tuned_model = "ft:gpt-4.1-mini-2025-04-14:personal::BnpFst9a"
 
-query1 = "What types of tea are included in the subscription ?"
+# query1 = "What types of tea are included in the subscription ?"
 
-# This model response could be hallucinations...
-eval_model("gpt-4o-mini", query1)
-print("-" * 100)
+# # This model response could be hallucinations...
+# eval_model("gpt-4o-mini", query1)
+# print("-" * 100)
 
-# "This tuned model repsponse must be good...
-eval_model(fine_tuned_model, query1)
-print("-" * 100)
+# # "This tuned model repsponse must be good...
+# eval_model(fine_tuned_model, query1)
+# print("-" * 100)
 
-query1 = "How do I change my tea preferences for the next shipment ?"
+# query1 = "How do I change my tea preferences for the next shipment ?"
 
-# This model response could be hallucinations...
-eval_model("gpt-4o-mini", query1)
-print("-" * 100)
+# # This model response could be hallucinations...
+# eval_model("gpt-4o-mini", query1)
+# print("-" * 100)
 
-# "This tuned model repsponse must be good...
-eval_model(fine_tuned_model, query1)
+# # "This tuned model repsponse must be good...
+# eval_model(fine_tuned_model, query1)
+
+
+# Start the conversation between the user and the AI assistant/chatbot
+while True:
+    collect_messages(
+        "assistant", get_completion(fine_tuned_model)
+    )  # stores the response from the AI assistant
+
+    user_prompt = input("User: ")  # input box for entering prompt
+
+    if user_prompt == "exit":  # end the conversation with the AI assistant
+        print("\n Goodbye")
+        break
+
+    collect_messages("user", user_prompt)  # stores the user prompt
