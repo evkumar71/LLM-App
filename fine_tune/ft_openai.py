@@ -185,13 +185,13 @@ for message in dataset[0]["messages"]:
 
 check_file_format(dataset)
 
-estimate_cost(dataset)
+# estimate_cost(dataset)
 
 # Upload file once all validations are successful!
-training_file = client.files.create(
-    file=open("output.jsonl", "rb"), purpose="fine-tune"
-)
-print(training_file.id)
+# training_file = client.files.create(
+#     file=open("output.jsonl", "rb"), purpose="fine-tune"
+# )
+# print(training_file.id)
 
 # file-KX5samMQEwxLHXDiuyVfzq
 
@@ -202,16 +202,16 @@ print(training_file.id)
 # Your job may be queued behind other jobs and training a model 
 # can take minutes or hours depending on the model and dataset size.
 """
-print("Started fine tuning...")
+# print("Started fine tuning...")
 
-response = client.fine_tuning.jobs.create(
-    training_file=training_file.id,  # get the training file name from above response from when we upload the our jsonl file!
-    model="gpt-4.1-mini-2025-04-14",
-    hyperparameters={
-        "n_epochs": 5  # the number of read throughs -- how many times the file will be read through while fine-tuning
-    },
-)
-print(response.id)
+# response = client.fine_tuning.jobs.create(
+#     training_file=training_file.id,  # get the training file name from above response from when we upload the our jsonl file!
+#     model="gpt-4.1-mini-2025-04-14",
+#     hyperparameters={
+#         "n_epochs": 5  # the number of read throughs -- how many times the file will be read through while fine-tuning
+#     },
+# )
+# print(response.id)
 
 # Response.id
 job_id = "ftjob-7dFQrioNHET4Q7PKiC1P055A"
