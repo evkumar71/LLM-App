@@ -14,6 +14,7 @@ import evaluate
 
 model_checkpoint = "distilbert-base-uncased"
 
+
 def print_model_size(path):
     size = 0
     for f in os.scandir(path):
@@ -71,15 +72,8 @@ def preprocess_function(examples, tokenizer):
     return result
 
 
-
-if __name__ == "__main__":
-    print("Starting LoRA fine-tuning demo...")
-
-    # model_checkpoint = "distilbert-base-uncased"
-    print(f"Using model: {model_checkpoint}")
-
+def get_train_and_test_datasets():
     # Load datasets
-    print("\nLoading datasets...")
     dataset1 = load_dataset("imdb", split="train[:1000]")
     dataset2 = load_dataset("ag_news", split="train[:1000]")
 
@@ -97,29 +91,34 @@ if __name__ == "__main__":
     dataset2_train = dataset2.select(range(train_size))
     dataset2_test = dataset2.select(range(train_size, len(dataset2)))
 
-    print("\nLoading tokenizer...")
-    tokenizer = AutoTokenizer.from_pretrained(model_checkpoint)
-    data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
+    return {
+        "dataset1_train": dataset1_train,
+        "dataset1_test": dataset1_test,
+        "dataset2_train": dataset2_train,
+        "dataset2_test": dataset2_test,
+    }
 
-    config = {
+
+def get_model_config(datasets):
+    return {
         "sentiment": {
-            "train_data": dataset1_train,
-            "test_data": dataset1_test,
+            "train_data": datasets["dataset1_train"],
+            "test_data": datasets["dataset1_test"],
             "num_labels": 2,
             "epochs": 5,
             "path": "./lora-sentiment",
         },
         "topic": {
-            "train_data": dataset2_train,
-            "test_data": dataset2_test,
+            "train_data": datasets["dataset2_train"],
+            "test_data": datasets["dataset2_test"],
             "num_labels": 4,
             "epochs": 5,
             "path": "./lora-topic",
         },
     }
 
-    # Preprocess datasets
-    print("Preprocessing datasets...")
+
+def pre_process_datasets(config, tokenizer):
     for cfg in config.values():
         cfg["train_data"] = cfg["train_data"].map(
             lambda x: preprocess_function(x, tokenizer),
@@ -136,7 +135,10 @@ if __name__ == "__main__":
         cfg["train_data"].set_format("torch")
         cfg["test_data"].set_format("torch")
 
-    training_arguments = TrainingArguments(
+
+def get_training_arguments():
+
+    return TrainingArguments(
         output_dir="./checkpoints",
         learning_rate=2e-4,
         per_device_train_batch_size=16,
@@ -152,6 +154,61 @@ if __name__ == "__main__":
         warmup_steps=100,
         seed=42,
     )
+
+
+def get_text_examples():
+    return [
+        {
+            "text": "This movie was absolutely fantastic! The acting was superb.",
+            "model": "sentiment",
+            "num_labels": 2,
+            "task_type": "sentiment",
+            "expected": "Positive",
+        },
+        {
+            "text": "The worst film I've ever seen. Complete waste of time.",
+            "model": "sentiment",
+            "num_labels": 2,
+            "task_type": "sentiment",
+            "expected": "Negative",
+        },
+        {
+            "text": "Tesla stock surges 20% after strong quarterly earnings report.",
+            "model": "topic",
+            "num_labels": 4,
+            "task_type": "topic",
+            "expected": "Business",
+        },
+        {
+            "text": "New AI model achieves breakthrough in protein folding.",
+            "model": "topic",
+            "num_labels": 4,
+            "task_type": "topic",
+            "expected": "Science/Technology",
+        },
+    ]
+
+
+if __name__ == "__main__":
+    print("Starting LoRA fine-tuning demo...")
+
+    # model_checkpoint = "distilbert-base-uncased"
+    print(f"Using model: {model_checkpoint}")
+
+    print("\nLoading datasets...")
+    datasets = get_train_and_test_datasets()
+
+    config = get_model_config(datasets)
+
+    print("\nLoading tokenizer...")
+    tokenizer = AutoTokenizer.from_pretrained(model_checkpoint)
+    data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
+
+    # Preprocess datasets
+    print("Preprocessing datasets...")
+    pre_process_datasets(config, tokenizer)
+
+    training_arguments = get_training_arguments()
 
     metric = evaluate.load("accuracy")
 
@@ -213,36 +270,7 @@ if __name__ == "__main__":
         return label_map[predicted_class], confidence
 
     # Test examples
-    test_texts = [
-        {
-            "text": "This movie was absolutely fantastic! The acting was superb.",
-            "model": "sentiment",
-            "num_labels": 2,
-            "task_type": "sentiment",
-            "expected": "Positive",
-        },
-        {
-            "text": "The worst film I've ever seen. Complete waste of time.",
-            "model": "sentiment",
-            "num_labels": 2,
-            "task_type": "sentiment",
-            "expected": "Negative",
-        },
-        {
-            "text": "Tesla stock surges 20% after strong quarterly earnings report.",
-            "model": "topic",
-            "num_labels": 4,
-            "task_type": "topic",
-            "expected": "Business",
-        },
-        {
-            "text": "New AI model achieves breakthrough in protein folding.",
-            "model": "topic",
-            "num_labels": 4,
-            "task_type": "topic",
-            "expected": "Science/Technology",
-        },
-    ]
+    test_texts = get_text_examples()
 
     print("\nRunning predictions on test examples:")
     for test in test_texts:
